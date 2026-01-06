@@ -1,12 +1,18 @@
 import { useMemo, useState } from "react";
 import { View, Text, Input, Button } from "@tarojs/components";
-import { navigateTo, useDidShow } from "@tarojs/taro";
+import Taro, { navigateTo, useDidShow } from "@tarojs/taro";
 
 import type { EventItem } from "../../types/events";
-import { createEvent, loadEvents, persistEvents } from "../../utils/eventStore";
+import {
+  createEvent,
+  deleteEvent,
+  loadEvents,
+  persistEvents,
+} from "../../utils/eventStore";
 
 import PageHeader from "../../components/PageHeader";
 import HeaderMeta from "../../components/HeaderMeta";
+import SwipeableItem from "../../components/SwipeableItem";
 
 import "./index.scss";
 
@@ -15,6 +21,7 @@ export default function Index() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [editingEventId, setEditingEventId] = useState<number | null>(null);
 
   useDidShow(() => {
     setEvents(loadEvents());
@@ -30,15 +37,45 @@ export default function Index() {
     const trimmedTitle = title.trim();
     if (!trimmedTitle) return;
 
-    const nextEvents = [
-      createEvent(trimmedTitle, description.trim()),
-      ...events,
-    ];
+    const nextEvents = editingEventId
+      ? events.map((event) =>
+          event.id === editingEventId
+            ? { ...event, title: trimmedTitle, description: description.trim() }
+            : event
+        )
+      : [createEvent(trimmedTitle, description.trim()), ...events];
     persistEvents(nextEvents);
     setEvents(nextEvents);
     setTitle("");
     setDescription("");
     setShowCreateDialog(false);
+    setEditingEventId(null);
+  };
+
+  const openCreateDialog = () => {
+    setTitle("");
+    setDescription("");
+    setEditingEventId(null);
+    setShowCreateDialog(true);
+  };
+
+  const openEditDialog = (event: EventItem) => {
+    setTitle(event.title);
+    setDescription(event.description);
+    setEditingEventId(event.id);
+    setShowCreateDialog(true);
+  };
+
+  const handleDeleteEvent = (eventId: number) => {
+    Taro.showModal({
+      title: "删除事件",
+      content: "确定要删除该事件吗？",
+      success: (result) => {
+        if (!result.confirm) return;
+        deleteEvent(eventId);
+        setEvents((prev) => prev.filter((item) => item.id !== eventId));
+      },
+    });
   };
 
   const goToDetail = (eventId: number) => {
@@ -59,10 +96,7 @@ export default function Index() {
           </View>
         }
         right={
-          <Button
-            className="header-action"
-            onClick={() => setShowCreateDialog(true)}
-          >
+          <Button className="header-action" onClick={openCreateDialog}>
             新建事件
           </Button>
         }
@@ -84,18 +118,29 @@ export default function Index() {
         </View>
 
         <View className="event-list">
-          {events.map(event => {
+          {events.map((event) => {
             return (
-              <View
+              <SwipeableItem
                 key={event.id}
-                className="event-card"
-                onClick={() => goToDetail(event.id)}
+                actions={[
+                  { text: "编辑", onClick: () => openEditDialog(event) },
+                  {
+                    text: "删除",
+                    type: "danger",
+                    onClick: () => handleDeleteEvent(event.id),
+                  },
+                ]}
               >
-                <View className="event-card_header">
-                  <Text className="event-name">{event.title}</Text>
-                  <Text className="event-chevron">›</Text>
+                <View
+                  className="event-card"
+                  onClick={() => goToDetail(event.id)}
+                >
+                  <View className="event-card_header">
+                    <Text className="event-name">{event.title}</Text>
+                    <Text className="event-chevron">›</Text>
+                  </View>
                 </View>
-              </View>
+              </SwipeableItem>
             );
           })}
 
@@ -136,7 +181,7 @@ export default function Index() {
                 onInput={(event) => setDescription(event.detail.value)}
               />
               <Button className="add-button" onClick={handleCreateEvent}>
-                保存事件
+                {editingEventId ? "保存修改" : "保存事件"}
               </Button>
             </View>
           </View>

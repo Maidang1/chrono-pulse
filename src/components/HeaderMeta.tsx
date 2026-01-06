@@ -7,6 +7,8 @@ export type HeaderMetaItem = {
   key: string
   text: ReactNode
   tone?: MetaTone
+  onClick?: () => void
+  className?: string
 }
 
 type HeaderMetaProps = {
@@ -18,7 +20,11 @@ export default function HeaderMeta ({ items, className }: HeaderMetaProps) {
   return (
     <View className={`header-meta${className ? ` ${className}` : ''}`}>
       {items.map(item => (
-        <View key={item.key} className='meta-pill'>
+        <View
+          key={item.key}
+          className={`meta-pill${item.className ? ` ${item.className}` : ''}`}
+          onClick={item.onClick}
+        >
           <View className={`meta-dot ${item.tone ?? 'neutral'}`} />
           <Text className='meta-text'>{item.text}</Text>
         </View>

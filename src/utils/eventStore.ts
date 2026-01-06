@@ -76,6 +76,18 @@ export const persistEvents = (events: EventItem[]) => {
   Taro.setStorageSync(STORAGE_KEY, events)
 }
 
+export const updateEvent = (event: EventItem) => {
+  const events = loadEvents()
+  const next = events.map(item => (item.id === event.id ? event : item))
+  persistEvents(next)
+}
+
+export const deleteEvent = (eventId: number) => {
+  const events = loadEvents()
+  const next = events.filter(item => item.id !== eventId)
+  persistEvents(next)
+}
+
 export const createEvent = (title: string, description: string): EventItem => {
   const now = new Date()
   return {

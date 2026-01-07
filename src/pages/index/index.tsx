@@ -31,6 +31,8 @@ export default function Index() {
   const [pendingDeleteEventId, setPendingDeleteEventId] = useState<number | null>(null);
   const [showConfigDialog, setShowConfigDialog] = useState(false);
   const [configSnapshot, setConfigSnapshot] = useState(getDeepSeekConfig());
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [showAboutDialog, setShowAboutDialog] = useState(false);
 
   useDidShow(() => {
     setEvents(loadEvents());
@@ -103,6 +105,21 @@ export default function Index() {
     });
   };
 
+  const openSettingsDialog = () => {
+    setShowSettingsDialog(true);
+  };
+
+  const openDeepSeekSettings = () => {
+    setConfigSnapshot(getDeepSeekConfig());
+    setShowSettingsDialog(false);
+    setShowConfigDialog(true);
+  };
+
+  const openAboutDialog = () => {
+    setShowSettingsDialog(false);
+    setShowAboutDialog(true);
+  };
+
   return (
     <View className="index">
       <View className="blueprint-surface" />
@@ -116,6 +133,9 @@ export default function Index() {
         }
         right={
           <View className="header-actions">
+            <Button className="header-action ghost" onClick={openSettingsDialog}>
+              设置
+            </Button>
             <Button
               className="header-action outline"
               onClick={openGlobalInsight}
@@ -244,6 +264,67 @@ export default function Index() {
               <Button className="add-button danger" onClick={confirmDeleteEvent}>
                 删除
               </Button>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {showSettingsDialog && (
+        <View className="create-dialog">
+          <View
+            className="dialog-mask"
+            onClick={() => setShowSettingsDialog(false)}
+          />
+          <View className="dialog-card settings-dialog">
+            <View className="dialog-header">
+              <Text className="dialog-title">设置</Text>
+              <Button
+                className="dialog-close"
+                onClick={() => setShowSettingsDialog(false)}
+              >
+                关闭
+              </Button>
+            </View>
+            <View className="settings-options">
+              <Button
+                className="settings-option primary"
+                onClick={openDeepSeekSettings}
+              >
+                修改 DeepSeek 配置
+              </Button>
+              <Button className="settings-option" onClick={openAboutDialog}>
+                关于小程序
+              </Button>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {showAboutDialog && (
+        <View className="create-dialog">
+          <View
+            className="dialog-mask"
+            onClick={() => setShowAboutDialog(false)}
+          />
+          <View className="dialog-card about-dialog">
+            <View className="dialog-header">
+              <Text className="dialog-title">关于小程序</Text>
+              <Button
+                className="dialog-close"
+                onClick={() => setShowAboutDialog(false)}
+              >
+                关闭
+              </Button>
+            </View>
+            <View className="about-content">
+              <Text>作者: madinah</Text>
+              <Text>代码开源地址： https://github.com/Maidang1/time-tracker</Text>
+              <Text>
+                意见 bug 反馈地址： https://github.com/Maidang1/time-tracker/issues
+              </Text>
+              <Text className="about-note">
+                本程序永久免费，Open Source, Free Forever~~。
+              </Text>
             </View>
           </View>
         </View>

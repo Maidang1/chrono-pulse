@@ -187,6 +187,12 @@ page {
   border: 2rpx solid var(--color-orange);
 }
 
+.header-action.ghost {
+  background-color: var(--color-white);
+  color: var(--color-black);
+  border: 2rpx solid var(--color-black);
+}
+
 .header-meta {
   display: flex;
   gap: 16rpx;
@@ -400,6 +406,49 @@ page {
 .ai-dialog-card {
   max-height: 80vh;
   overflow-y: auto;
+}
+
+.settings-dialog,
+.about-dialog {
+  gap: 20rpx;
+}
+
+.settings-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.settings-option {
+  border: 2rpx solid var(--color-black);
+  border-radius: 16rpx;
+  height: 88rpx;
+  line-height: 88rpx;
+  background-color: var(--color-white);
+  color: var(--color-black);
+  font-size: 28rpx;
+}
+
+.settings-option.primary {
+  background-color: var(--color-orange);
+  border-color: var(--color-orange);
+  color: var(--color-white);
+  box-shadow: 0 12rpx 24rpx #f6821f40;
+}
+
+.about-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  font-size: 26rpx;
+  line-height: 1.5;
+  color: var(--color-gray-dark);
+}
+
+.about-note {
+  margin-top: 8rpx;
+  font-weight: 600;
+  color: var(--color-black);
 }
 
 .confirm-body {

@@ -49,6 +49,7 @@ export default function DeepSeekConfigDialog({
               value={apiKey}
               placeholder="请输入 DeepSeek API Key"
               className="config-input"
+              password
               onInput={(event) => setApiKey(event.detail.value)}
             />
           </View>

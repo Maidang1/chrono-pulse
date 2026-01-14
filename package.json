@@ -56,7 +56,8 @@
     "@tarojs/shared": "4.1.5",
     "@tarojs/taro": "4.1.5",
     "react": "^18.0.0",
-    "react-dom": "^18.0.0"
+    "react-dom": "^18.0.0",
+    "supabase-wechat-stable-v2": "^2.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.24.4",

@@ -7,12 +7,6 @@ import { formatMinutes } from "../../utils/time";
 import PageHeader from "../../components/PageHeader";
 import HeaderMeta from "../../components/HeaderMeta";
 import SwipeableItem from "../../components/SwipeableItem";
-import DeepSeekConfigDialog from "../../components/DeepSeekConfigDialog";
-import {
-  getDeepSeekConfig,
-  isDeepSeekConfigured,
-  saveDeepSeekConfig,
-} from "../../utils/aiConfig";
 import DataManager from "../../services/dataManager";
 
 export default function EventDetail() {
@@ -30,8 +24,6 @@ export default function EventDetail() {
   const [pendingDeleteRecordId, setPendingDeleteRecordId] = useState<
     number | null
   >(null);
-  const [showConfigDialog, setShowConfigDialog] = useState(false);
-  const [configSnapshot, setConfigSnapshot] = useState(getDeepSeekConfig());
   const [isLoading, setIsLoading] = useState(false);
 
   const showSyncError = useCallback(
@@ -184,17 +176,6 @@ export default function EventDetail() {
     setPendingDeleteRecordId(null);
   };
 
-  const goToEventInsight = () => {
-    if (!eventId) return;
-    if (!isDeepSeekConfigured()) {
-      setConfigSnapshot(getDeepSeekConfig());
-      setShowConfigDialog(true);
-      return;
-    }
-    Taro.navigateTo({
-      url: `/pages/event-ai-insights/index?id=${eventId}`,
-    });
-  };
 
   const goToAnalysis = () => {
     if (!eventId) return;
@@ -241,12 +222,6 @@ export default function EventDetail() {
             }
             right={
               <View className="flex items-center gap-[12rpx]">
-                <Button
-                  className="mr-0 border-[2rpx] border-solid border-[#1a1a1a] rounded-[999px] px-[24rpx] h-[72rpx] leading-[72rpx] bg-[#ffffff] text-[#1a1a1a] text-[26rpx]"
-                  onClick={goToEventInsight}
-                >
-                  AI 洞察
-                </Button>
                 <Button
                   className="mr-0 border-solid border-[2rpx] border-[#1a1a1a] rounded-[999px] px-[24rpx] h-[72rpx] leading-[72rpx] bg-[#ffffff] text-[#1a1a1a] text-[26rpx]"
                   onClick={goToAnalysis}
@@ -465,16 +440,6 @@ export default function EventDetail() {
         </View>
       )}
 
-      <DeepSeekConfigDialog
-        open={showConfigDialog}
-        initialConfig={configSnapshot}
-        onClose={() => setShowConfigDialog(false)}
-        onSave={(nextConfig) => {
-          const saved = saveDeepSeekConfig(nextConfig);
-          setConfigSnapshot(saved);
-          setShowConfigDialog(false);
-        }}
-      />
     </View>
   );
 }

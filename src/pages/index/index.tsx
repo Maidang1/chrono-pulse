@@ -9,12 +9,6 @@ import DataManager, { type SyncErrorCallback } from "../../services/dataManager"
 import PageHeader from "../../components/PageHeader";
 import HeaderMeta from "../../components/HeaderMeta";
 import SwipeableItem from "../../components/SwipeableItem";
-import DeepSeekConfigDialog from "../../components/DeepSeekConfigDialog";
-import {
-  getDeepSeekConfig,
-  isDeepSeekConfigured,
-  saveDeepSeekConfig,
-} from "../../utils/aiConfig";
 
 export default function Index() {
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -23,8 +17,6 @@ export default function Index() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
   const [pendingDeleteEventId, setPendingDeleteEventId] = useState<number | null>(null);
-  const [showConfigDialog, setShowConfigDialog] = useState(false);
-  const [configSnapshot, setConfigSnapshot] = useState(getDeepSeekConfig());
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [showAboutDialog, setShowAboutDialog] = useState(false);
   const [syncError, setSyncError] = useState<{ type: string; message: string } | null>(null);
@@ -162,25 +154,8 @@ export default function Index() {
     });
   };
 
-  const openGlobalInsight = () => {
-    if (!isDeepSeekConfigured()) {
-      setConfigSnapshot(getDeepSeekConfig());
-      setShowConfigDialog(true);
-      return;
-    }
-    navigateTo({
-      url: "/pages/ai-insights/index",
-    });
-  };
-
   const openSettingsDialog = () => {
     setShowSettingsDialog(true);
-  };
-
-  const openDeepSeekSettings = () => {
-    setConfigSnapshot(getDeepSeekConfig());
-    setShowSettingsDialog(false);
-    setShowConfigDialog(true);
   };
 
   const openAboutDialog = () => {
@@ -204,12 +179,6 @@ export default function Index() {
           <View className="flex items-center gap-[12rpx]">
             <Button className="mr-0 border-[2rpx] border-solid border-[#1a1a1a] rounded-[999px] px-[24rpx] h-[72rpx] leading-[72rpx] bg-[#ffffff] text-[#1a1a1a] text-[26rpx]" onClick={openSettingsDialog}>
               设置
-            </Button>
-            <Button
-              className="mr-0 border-[2rpx] border-solid rounded-[999px] px-[24rpx] h-[72rpx] leading-[72rpx] text-[26rpx] bg-transparent text-[#f6821f] outline-none border-[#f6821f]"
-              onClick={openGlobalInsight}
-            >
-              AI 洞察
             </Button>
             <Button className="mr-0 border-[2rpx] border-solid border-[#1a1a1a] rounded-[999px] px-[24rpx] h-[72rpx] leading-[72rpx] bg-[#f6821f] text-[#ffffff] text-[26rpx]" onClick={openCreateDialog}>
               新建
@@ -400,16 +369,6 @@ export default function Index() {
         </View>
       )}
 
-      <DeepSeekConfigDialog
-        open={showConfigDialog}
-        initialConfig={configSnapshot}
-        onClose={() => setShowConfigDialog(false)}
-        onSave={(nextConfig) => {
-          const saved = saveDeepSeekConfig(nextConfig);
-          setConfigSnapshot(saved);
-          setShowConfigDialog(false);
-        }}
-      />
     </View>
   );
 }

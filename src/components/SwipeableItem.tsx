@@ -1,6 +1,7 @@
 import { PropsWithChildren, useMemo, useRef, useState } from "react";
 import { View } from "@tarojs/components";
 import Taro from "@tarojs/taro";
+import { useTheme } from "../hooks/useTheme";
 
 type SwipeAction = {
   text: string;
@@ -25,7 +26,7 @@ const getRpxScale = () => {
 
 export default function SwipeableItem({
   actions,
-  actionWidthRpx = 120,
+  actionWidthRpx = 80,
   children,
 }: SwipeableItemProps) {
   const [offsetRpx, setOffsetRpx] = useState(0);
@@ -33,7 +34,8 @@ export default function SwipeableItem({
   const startXRef = useRef(0);
   const startOffsetRef = useRef(0);
   const scale = useMemo(() => getRpxScale(), []);
-  const maxOffset = actionWidthRpx * actions.length;
+  const maxOffset = (actionWidthRpx + 16) * actions.length + 24; // 增加间距和右边距
+  const { actualTheme } = useTheme();
 
   const handleTouchStart = (event: any) => {
     const touch = event.touches?.[0];
@@ -63,6 +65,17 @@ export default function SwipeableItem({
     setOffsetRpx(0);
   };
 
+  // 根据主题动态生成样式
+  const themeStyles = {
+    actionButton: (actionType: string) => actualTheme === 'dark'
+      ? `w-[80rpx] h-[80rpx] rounded-full flex items-center justify-center shadow-[0_8rpx_16rpx_rgba(0,0,0,0.15)] border-[2rpx] border-[#333333] ${
+          actionType === "danger" ? "bg-[#ff6b6b] text-[#ffffff]" : "bg-[#1a1a1a] text-[#ffffff]"
+        }`
+      : `w-[80rpx] h-[80rpx] rounded-full flex items-center justify-center shadow-[0_8rpx_16rpx_rgba(0,0,0,0.15)] border-[2rpx] border-[#1a1a1a] ${
+          actionType === "danger" ? "bg-[#f4333c] text-[#ffffff]" : "bg-[#ffffff] text-[#1a1a1a]"
+        }`,
+  };
+
   return (
     <View className="relative rounded-[18rpx]">
       <View
@@ -78,23 +91,28 @@ export default function SwipeableItem({
         {children}
       </View>
       <View
-        className="absolute top-0 right-0 bottom-0 flex items-stretch z-[1] rounded-[18rpx] overflow-hidden"
+        className="absolute top-[50%] right-[24rpx] flex items-center gap-[16rpx] z-[1]"
         style={{
-          width: `${maxOffset}rpx`,
+          transform: 'translateY(-50%)',
+          opacity: Math.abs(offsetRpx) > 20 ? 1 : 0,
+          transition: dragging ? "none" : "opacity 0.2s ease",
         }}
       >
         {actions.map((action) => (
           <View
             key={action.text}
-            className={`flex items-center justify-center text-[26rpx]  border-l-[1rpx] border-[#e0e0e0]`}
+            className={themeStyles.actionButton(action.type || "default")}
             style={{
-              width: `${actionWidthRpx}rpx`,
-              color: action.type === "danger" ? "#ffffff" : "#1a1a1a",
-              backgroundColor: action.type === "danger" ? "#f4333c" : "#f5f5f0",
+              transform: `scale(${Math.abs(offsetRpx) > 60 ? 1 : 0.8})`,
+              transition: dragging ? "none" : "transform 0.2s ease",
             }}
             onClick={() => handleAction(action)}
           >
-            {action.text}
+            {action.type === "danger" ? (
+              <View className="text-[32rpx] font-bold">×</View>
+            ) : (
+              <View className="text-[28rpx]">✎</View>
+            )}
           </View>
         ))}
       </View>

@@ -10,5 +10,7 @@ export default defineAppConfig({
     navigationBarBackgroundColor: '#fff',
     navigationBarTitleText: 'WeChat',
     navigationBarTextStyle: 'black'
-  }
+  },
+  // 启用 dark mode 支持
+  darkmode: true
 })

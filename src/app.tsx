@@ -1,6 +1,7 @@
 import Taro, { useLaunch } from '@tarojs/taro'
 
 import DataManager from './services/dataManager'
+import { ThemeProvider } from './contexts/ThemeContext'
 import './app.scss'
 
 export default function App({ children }: { children: React.ReactNode }) {
@@ -21,5 +22,9 @@ export default function App({ children }: { children: React.ReactNode }) {
     }
   })
 
-  return children
+  return (
+    <ThemeProvider>
+      {children}
+    </ThemeProvider>
+  )
 }

@@ -2,10 +2,38 @@
 @use 'tailwindcss/components' as *;
 @use 'tailwindcss/utilities' as *;
 
+/* 主题 CSS 变量定义 (保留用于其他可能的用途) */
+:root {
+  /* 浅色主题变量 */
+  --color-bg-primary: #f5f5f0;
+  --color-bg-secondary: #ffffff;
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #4a4a4a;
+  --color-text-muted: #888888;
+  --color-accent: #f6821f;
+  --color-border: #1a1a1a;
+  --color-border-light: #dcdcdc;
+  --color-danger: #f4333c;
+}
+
+/* 深色主题变量 */
+.dark {
+  --color-bg-primary: #0f0f0f;
+  --color-bg-secondary: #1a1a1a;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #cccccc;
+  --color-text-muted: #888888;
+  --color-accent: #ff8c42;
+  --color-border: #333333;
+  --color-border-light: #2a2a2a;
+  --color-danger: #ff6b6b;
+}
+
 page {
   width: 100%;
   min-height: 100vh;
-  background-color: #f5f5f0;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
 }
 
 body {
@@ -15,3 +43,4 @@ body {
     'Hiragino Sans GB', 'Microsoft YaHei', 'Roboto', 'Noto Sans SC',
     'Source Han Sans SC', 'Helvetica Neue', Arial, sans-serif;
 }
+

@@ -10,7 +10,6 @@ import DataManager, {
 import PageHeader from "../../components/PageHeader";
 import HeaderMeta from "../../components/HeaderMeta";
 import SwipeableItem from "../../components/SwipeableItem";
-import ThemeToggle from "../../components/ThemeToggle";
 import { useTheme } from "../../hooks/useTheme";
 
 export default function Index() {
@@ -231,7 +230,6 @@ export default function Index() {
         }
         right={
           <View className="flex items-center gap-[12rpx]">
-            <ThemeToggle />
             <Button
               className={themeStyles.aboutButton}
               onClick={() => setShowAboutDialog(true)}

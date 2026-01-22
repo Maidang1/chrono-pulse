@@ -15,7 +15,6 @@ interface SyncTask {
 const STORAGE_KEY_EVENTS = 'time-track-events';
 const STORAGE_KEY_QUEUE = 'time-track-queue';
 const COLLECTION_NAME = 'events';
-const COLLECTION_RECORDS = 'records';
 
 class DataManager {
   private static instance: DataManager;
@@ -249,13 +248,11 @@ class DataManager {
     try {
         const db = Taro.cloud.database();
         const eventCollection = db.collection(COLLECTION_NAME);
-        const recordCollection = db.collection(COLLECTION_RECORDS);
         const MAX_LIMIT = 20;
 
         let allCloudEvents: EventItem[] = [];
-        let allCloudRecords: EventRecord[] = [];
 
-        // 1. Fetch all events (Pagination)
+        // 1. Fetch all events with records (Pagination)
         let page = 0;
         while (true) {
             const res = await eventCollection.skip(page * MAX_LIMIT).limit(MAX_LIMIT).get();
@@ -266,32 +263,11 @@ class DataManager {
             if (data.length < MAX_LIMIT) break;
         }
 
-        // 2. Fetch all records (Pagination)
-        // Note: For large datasets, fetching ALL records might be slow. 
-        // Ideally we should filter by eventIds, but for now we sync all as requested.
-        page = 0;
-        while (true) {
-            const res = await recordCollection.skip(page * MAX_LIMIT).limit(MAX_LIMIT).get();
-            const data = res.data as any[]; // Cloud record has extra fields like eventId
-            if (data.length === 0) break;
-            allCloudRecords = allCloudRecords.concat(data);
-            page++;
-            if (data.length < MAX_LIMIT) break;
-        }
+        console.log(`Fetched ${allCloudEvents.length} events from cloud.`);
 
-        console.log(`Fetched ${allCloudEvents.length} events and ${allCloudRecords.length} records from cloud.`);
-
-        // 3. Associate Records with Events
-        const recordsByEventId = new Map<number, EventRecord[]>();
-        allCloudRecords.forEach((r: any) => {
-            if (!recordsByEventId.has(r.eventId)) {
-                recordsByEventId.set(r.eventId, []);
-            }
-            recordsByEventId.get(r.eventId)?.push(r as EventRecord);
-        });
-
+        // 2. Ensure records array exists and sort
         allCloudEvents.forEach(event => {
-            event.records = recordsByEventId.get(event.id) || [];
+            event.records = Array.isArray(event.records) ? event.records : [];
             // Sort records by date/time desc if needed
             event.records.sort((a, b) => {
                  const timeA = new Date(`${a.startDate || a.date} ${a.startTime}`).getTime();
@@ -300,7 +276,7 @@ class DataManager {
             });
         });
 
-        // 4. Merge with Local
+        // 3. Merge with Local
         let hasChanges = false;
         
         // Map for fast lookup

@@ -7,9 +7,7 @@ export default defineAppConfig({
   ],
   window: {
     backgroundTextStyle: 'light',
-    navigationBarBackgroundColor: '#fff',
-    navigationBarTitleText: 'WeChat',
-    navigationBarTextStyle: 'black'
+    navigationBarTitleText: 'Chrono Pulse'
   },
   // 启用 dark mode 支持
   darkmode: true

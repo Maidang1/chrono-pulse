@@ -21,6 +21,7 @@ export default function EventDetail() {
   const [endDate, setEndDate] = useState("");
   const [endTime, setEndTime] = useState("");
   const [note, setNote] = useState("");
+  const [todoDescription, setTodoDescription] = useState("");
   const [showRecordDialog, setShowRecordDialog] = useState(false);
   const [editingRecordId, setEditingRecordId] = useState<number | null>(null);
   const [pendingDeleteRecordId, setPendingDeleteRecordId] = useState<
@@ -88,68 +89,96 @@ export default function EventDetail() {
   }, [startDate, startTime, endDate, endTime]);
 
   const openRecordDialog = () => {
-    const today = new Date().toISOString().slice(0, 10);
-    setStartDate(today);
-    setEndDate(today);
-    setStartTime("");
-    setEndTime("");
-    setNote("");
+    if (eventData?.type === 'time-tracking') {
+      const today = new Date().toISOString().slice(0, 10);
+      setStartDate(today);
+      setEndDate(today);
+      setStartTime("");
+      setEndTime("");
+      setNote("");
+    } else {
+      setTodoDescription("");
+    }
     setEditingRecordId(null);
     setShowRecordDialog(true);
   };
 
   const openEditRecordDialog = (record: EventRecord) => {
-    // 兼容旧数据格式
-    setStartDate(record.startDate || record.date || "");
-    setEndDate(record.endDate || record.date || "");
-    setStartTime(record.startTime);
-    setEndTime(record.endTime);
-    setNote(record.note);
+    if (eventData?.type === 'time-tracking') {
+      // 兼容旧数据格式
+      setStartDate(record.startDate || record.date || "");
+      setEndDate(record.endDate || record.date || "");
+      setStartTime(record.startTime || "");
+      setEndTime(record.endTime || "");
+      setNote(record.note);
+    } else {
+      setTodoDescription(record.note);
+    }
     setEditingRecordId(record.id);
     setShowRecordDialog(true);
   };
 
   const handleSaveRecord = async () => {
-    if (!eventData || !startDate || !startTime || !endDate || !endTime) return;
+    if (!eventData) return;
+
+    // 根据类型验证
+    if (eventData.type === 'time-tracking') {
+      if (!startDate || !startTime || !endDate || !endTime) return;
+    } else if (eventData.type === 'todo') {
+      if (!todoDescription.trim()) return;
+    }
 
     setIsLoading(true);
 
     try {
       if (editingRecordId) {
-        const recordToUpdate = {
-          id: editingRecordId,
-          startDate,
-          endDate,
-          startTime,
-          endTime,
-          durationMinutes: pendingDuration,
-          note: note.trim(),
-          createdAt:
-            eventData.records.find((r) => r.id === editingRecordId)
-              ?.createdAt || new Date().toISOString(),
-          date: startDate,
-        };
-
-        await DataManager.updateRecord(eventId, recordToUpdate);
+        const recordToUpdate = eventData.records.find((r) => r.id === editingRecordId);
+        if (recordToUpdate) {
+          const updatedRecord = eventData.type === 'time-tracking'
+            ? {
+                ...recordToUpdate,
+                startDate,
+                endDate,
+                startTime,
+                endTime,
+                durationMinutes: pendingDuration,
+                note: note.trim(),
+                date: startDate,
+              }
+            : {
+                ...recordToUpdate,
+                note: todoDescription.trim(),
+              };
+          await DataManager.updateRecord(eventId, updatedRecord);
+        }
       } else {
-        const recordData = {
-          startDate,
-          endDate,
-          startTime,
-          endTime,
-          durationMinutes: pendingDuration,
-          note: note.trim(),
-          date: startDate,
-        };
-
+        const recordData = eventData.type === 'time-tracking'
+          ? {
+              startDate,
+              endDate,
+              startTime,
+              endTime,
+              durationMinutes: pendingDuration,
+              note: note.trim(),
+              date: startDate,
+            }
+          : {
+              note: todoDescription.trim(),
+              completed: false,
+            };
         await DataManager.createRecord(eventId, recordData);
       }
 
-      setStartDate("");
-      setEndDate("");
-      setStartTime("");
-      setEndTime("");
-      setNote("");
+      // 重置表单
+      if (eventData.type === 'time-tracking') {
+        setStartDate("");
+        setEndDate("");
+        setStartTime("");
+        setEndTime("");
+        setNote("");
+      } else {
+        setTodoDescription("");
+      }
       setShowRecordDialog(false);
       setEditingRecordId(null);
     } finally {
@@ -178,6 +207,10 @@ export default function EventDetail() {
     setPendingDeleteRecordId(null);
   };
 
+  const handleToggleComplete = async (recordId: number) => {
+    if (!eventData) return;
+    await DataManager.toggleRecordComplete(eventData.id, recordId);
+  };
 
   const goToAnalysis = () => {
     if (!eventId) return;
@@ -340,24 +373,49 @@ export default function EventDetail() {
                     },
                   ]}
                 >
-                  <View className={themeStyles.recordCard}>
-                    <View className={themeStyles.timelineDot} />
-                    <View className="flex items-center justify-between">
-                      <Text className={themeStyles.recordTime}>
-                        {record.startDate || record.date} {record.startTime}
-                        {record.endDate &&
-                        record.endDate !== (record.startDate || record.date)
-                          ? ` — ${record.endDate} ${record.endTime}`
-                          : ` — ${record.endTime}`}
-                      </Text>
-                      <Text className={themeStyles.recordDuration}>
-                        {formatMinutes(record.durationMinutes)}
+                  {eventData.type === 'time-tracking' ? (
+                    <View className={themeStyles.recordCard}>
+                      <View className={themeStyles.timelineDot} />
+                      <View className="flex items-center justify-between">
+                        <Text className={themeStyles.recordTime}>
+                          {record.startDate || record.date} {record.startTime}
+                          {record.endDate &&
+                          record.endDate !== (record.startDate || record.date)
+                            ? ` — ${record.endDate} ${record.endTime}`
+                            : ` — ${record.endTime}`}
+                        </Text>
+                        <Text className={themeStyles.recordDuration}>
+                          {formatMinutes(record.durationMinutes)}
+                        </Text>
+                      </View>
+                      <Text className={themeStyles.recordNote}>
+                        {record.note || "暂无备注"}
                       </Text>
                     </View>
-                    <Text className={themeStyles.recordNote}>
-                      {record.note || "暂无备注"}
-                    </Text>
-                  </View>
+                  ) : (
+                    <View
+                      className={`${themeStyles.recordCard} ${record.completed ? 'opacity-60' : ''}`}
+                      onClick={() => handleToggleComplete(record.id)}
+                    >
+                      <View className={themeStyles.timelineDot} />
+                      <View className="flex items-center gap-[16rpx]">
+                        <Text className="text-[40rpx]">
+                          {record.completed ? '☑' : '☐'}
+                        </Text>
+                        <Text className={`${themeStyles.recordNote} ${record.completed ? 'line-through' : ''}`}>
+                          {record.note}
+                        </Text>
+                      </View>
+                      <Text className={themeStyles.recordTime}>
+                        创建：{new Date(record.createdAt).toLocaleString('zh-CN')}
+                      </Text>
+                      {record.completedAt && (
+                        <Text className={themeStyles.recordTime}>
+                          完成：{new Date(record.completedAt).toLocaleString('zh-CN')}
+                        </Text>
+                      )}
+                    </View>
+                  )}
                 </SwipeableItem>
               ))}
 
@@ -394,64 +452,75 @@ export default function EventDetail() {
               </Button>
             </View>
             <View className={themeStyles.dialogBorder}>
-              <View className="flex gap-[16rpx]">
-                <Picker
-                  mode="date"
-                  value={startDate}
-                  onChange={(event) => setStartDate(event.detail.value)}
-                  className="flex-1"
-                >
-                  <View className={themeStyles.pickerView}>
-                    <Text>{startDate || "开始日期"}</Text>
+              {eventData?.type === 'time-tracking' ? (
+                <>
+                  <View className="flex gap-[16rpx]">
+                    <Picker
+                      mode="date"
+                      value={startDate}
+                      onChange={(event) => setStartDate(event.detail.value)}
+                      className="flex-1"
+                    >
+                      <View className={themeStyles.pickerView}>
+                        <Text>{startDate || "开始日期"}</Text>
+                      </View>
+                    </Picker>
+                    <Picker
+                      mode="time"
+                      value={startTime}
+                      onChange={(event) => setStartTime(event.detail.value)}
+                      className="flex-1"
+                    >
+                      <View className={themeStyles.pickerView}>
+                        <Text>{startTime || "开始时间"}</Text>
+                      </View>
+                    </Picker>
                   </View>
-                </Picker>
-                <Picker
-                  mode="time"
-                  value={startTime}
-                  onChange={(event) => setStartTime(event.detail.value)}
-                  className="flex-1"
-                >
-                  <View className={themeStyles.pickerView}>
-                    <Text>{startTime || "开始时间"}</Text>
-                  </View>
-                </Picker>
-              </View>
 
-              <View className="flex gap-[16rpx]">
-                <Picker
-                  mode="date"
-                  value={endDate}
-                  onChange={(event) => setEndDate(event.detail.value)}
-                  className="flex-1"
-                >
-                  <View className={themeStyles.pickerView}>
-                    <Text>{endDate || "结束日期"}</Text>
+                  <View className="flex gap-[16rpx]">
+                    <Picker
+                      mode="date"
+                      value={endDate}
+                      onChange={(event) => setEndDate(event.detail.value)}
+                      className="flex-1"
+                    >
+                      <View className={themeStyles.pickerView}>
+                        <Text>{endDate || "结束日期"}</Text>
+                      </View>
+                    </Picker>
+                    <Picker
+                      mode="time"
+                      value={endTime}
+                      onChange={(event) => setEndTime(event.detail.value)}
+                      className="flex-1"
+                    >
+                      <View className={themeStyles.pickerView}>
+                        <Text>{endTime || "结束时间"}</Text>
+                      </View>
+                    </Picker>
                   </View>
-                </Picker>
-                <Picker
-                  mode="time"
-                  value={endTime}
-                  onChange={(event) => setEndTime(event.detail.value)}
-                  className="flex-1"
-                >
-                  <View className={themeStyles.pickerView}>
-                    <Text>{endTime || "结束时间"}</Text>
-                  </View>
-                </Picker>
-              </View>
 
-              <Input
-                value={note}
-                placeholder="备注或观察"
-                className={themeStyles.input}
-                onInput={(event) => setNote(event.detail.value)}
-              />
-              <View className={themeStyles.durationText}>
-                <Text>时长：</Text>
-                <Text className={themeStyles.durationValue}>
-                  {pendingDuration ? formatMinutes(pendingDuration) : "—"}
-                </Text>
-              </View>
+                  <Input
+                    value={note}
+                    placeholder="备注或观察"
+                    className={themeStyles.input}
+                    onInput={(event) => setNote(event.detail.value)}
+                  />
+                  <View className={themeStyles.durationText}>
+                    <Text>时长：</Text>
+                    <Text className={themeStyles.durationValue}>
+                      {pendingDuration ? formatMinutes(pendingDuration) : "—"}
+                    </Text>
+                  </View>
+                </>
+              ) : (
+                <Input
+                  value={todoDescription}
+                  placeholder="输入待办事项描述"
+                  className={themeStyles.input}
+                  onInput={(event) => setTodoDescription(event.detail.value)}
+                />
+              )}
               <Button
                 className={themeStyles.saveButton}
                 onClick={handleSaveRecord}

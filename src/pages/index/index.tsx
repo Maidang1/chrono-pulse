@@ -3,9 +3,8 @@ import Taro from "@tarojs/taro";
 import { View, Text, Input, Button } from "@tarojs/components";
 import { navigateTo, useDidShow } from "@tarojs/taro";
 
-import type { EventItem } from "../../types/events";
-import DataManager, {
-} from "../../services/dataManager";
+import type { EventItem, EventType } from "../../types/events";
+import DataManager from "../../services/dataManager";
 
 import PageHeader from "../../components/PageHeader";
 import HeaderMeta from "../../components/HeaderMeta";
@@ -17,6 +16,7 @@ export default function Index() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [eventType, setEventType] = useState<EventType>("time-tracking");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
   const [pendingDeleteEventId, setPendingDeleteEventId] = useState<
@@ -112,7 +112,11 @@ export default function Index() {
           refreshEvents();
         }
       } else {
-        await DataManager.createEvent(trimmedTitle, description.trim());
+        await DataManager.createEvent(
+          trimmedTitle,
+          description.trim(),
+          eventType,
+        );
         refreshEvents();
       }
 
@@ -129,6 +133,7 @@ export default function Index() {
   const openCreateDialog = () => {
     setTitle("");
     setDescription("");
+    setEventType("time-tracking");
     setEditingEventId(null);
     setShowCreateDialog(true);
   };
@@ -169,49 +174,95 @@ export default function Index() {
 
   // 根据主题动态生成样式
   const themeStyles = {
-    container: actualTheme === 'dark'
-      ? "min-h-screen w-full px-[24rpx] py-[32rpx] sm:px-[32rpx] sm:py-[40rpx] pb-[48rpx] sm:pb-[64rpx] bg-[#0f0f0f] text-[#ffffff] font-sans relative box-border flex flex-col gap-[24rpx]"
-      : "min-h-screen w-full px-[24rpx] py-[32rpx] sm:px-[32rpx] sm:py-[40rpx] pb-[48rpx] sm:pb-[64rpx] bg-[#f5f5f0] text-[#1a1a1a] font-sans relative box-border flex flex-col gap-[24rpx]",
-    background: actualTheme === 'dark'
-      ? "absolute inset-0 bg-[#0f0f0f] opacity-70 z-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_60px,#2a2a2a_61px),repeating-linear-gradient(90deg,transparent,transparent_60px,#2a2a2a_61px),repeating-linear-gradient(-45deg,transparent,transparent_3px,#0000001a_3px,#0000001a_4px)]"
-      : "absolute inset-0 bg-[#f5f5f0] opacity-70 z-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_60px,#dcdcdc_61px),repeating-linear-gradient(90deg,transparent,transparent_60px,#dcdcdc_61px),repeating-linear-gradient(-45deg,transparent,transparent_3px,#0000001a_3px,#0000001a_4px)]",
-    logo: actualTheme === 'dark'
-      ? "w-[64rpx] h-[64rpx] rounded-[18rpx] border-[2rpx] border-[#333333] flex items-center justify-center text-[26rpx] font-bold bg-[#1a1a1a] text-[#ffffff]"
-      : "w-[64rpx] h-[64rpx] rounded-[18rpx] border-[2rpx] border-[#1a1a1a] flex items-center justify-center text-[26rpx] font-bold bg-[#ffffff] text-[#1a1a1a]",
-    aboutButton: actualTheme === 'dark'
-      ? "mr-0 border-[2rpx] border-solid border-[#333333] rounded-[999px] px-[24rpx] h-[72rpx] leading-[72rpx] bg-[#1a1a1a] text-[#ffffff] text-[26rpx]"
-      : "mr-0 border-[2rpx] border-solid border-[#1a1a1a] rounded-[999px] px-[24rpx] h-[72rpx] leading-[72rpx] bg-[#ffffff] text-[#1a1a1a] text-[26rpx]",
-    createButton: actualTheme === 'dark'
-      ? "mr-0 border-[2rpx] border-solid border-[#333333] rounded-[999px] px-[24rpx] h-[72rpx] leading-[72rpx] bg-[#ff8c42] text-[#ffffff] text-[26rpx]"
-      : "mr-0 border-[2rpx] border-solid border-[#1a1a1a] rounded-[999px] px-[24rpx] h-[72rpx] leading-[72rpx] bg-[#f6821f] text-[#ffffff] text-[26rpx]",
-    eventCard: actualTheme === 'dark'
-      ? "border-[2rpx] border-[#333333] rounded-[18rpx] p-[30rpx] px-[24rpx] bg-[#1a1a1a] flex items-center justify-between shadow-[0_16rpx_32rpx_#00000010] cursor-pointer"
-      : "border-[2rpx] border-[#1a1a1a] rounded-[18rpx] p-[30rpx] px-[24rpx] bg-[#ffffff] flex items-center justify-between shadow-[0_16rpx_32rpx_#00000010] cursor-pointer",
-    arrowText: actualTheme === 'dark' ? "text-[40rpx] text-[#888888] translate-y-[-2px]" : "text-[40rpx] text-[#888888] translate-y-[-2px]",
-    emptyState: actualTheme === 'dark'
-      ? "border-[2rpx] dashed border-[#888888] rounded-[18rpx] p-[28rpx] text-[#cccccc] text-center text-[26rpx] leading-[1.5] bg-[repeating-linear-gradient(-45deg,transparent,transparent_3px,#0000001a_3px,#0000001a_4px)]"
-      : "border-[2rpx] dashed border-[#888888] rounded-[18rpx] p-[28rpx] text-[#4a4a4a] text-center text-[26rpx] leading-[1.5] bg-[repeating-linear-gradient(-45deg,transparent,transparent_3px,#0000001a_3px,#0000001a_4px)]",
+    container:
+      actualTheme === "dark"
+        ? "min-h-screen w-full px-[24rpx] py-[32rpx] sm:px-[32rpx] sm:py-[40rpx] pb-[48rpx] sm:pb-[64rpx] bg-[#0f0f0f] text-[#ffffff] font-sans relative box-border flex flex-col gap-[24rpx]"
+        : "min-h-screen w-full px-[24rpx] py-[32rpx] sm:px-[32rpx] sm:py-[40rpx] pb-[48rpx] sm:pb-[64rpx] bg-[#f5f5f0] text-[#1a1a1a] font-sans relative box-border flex flex-col gap-[24rpx]",
+    background:
+      actualTheme === "dark"
+        ? "absolute inset-0 bg-[#0f0f0f] opacity-70 z-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_60px,#2a2a2a_61px),repeating-linear-gradient(90deg,transparent,transparent_60px,#2a2a2a_61px),repeating-linear-gradient(-45deg,transparent,transparent_3px,#0000001a_3px,#0000001a_4px)]"
+        : "absolute inset-0 bg-[#f5f5f0] opacity-70 z-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_60px,#dcdcdc_61px),repeating-linear-gradient(90deg,transparent,transparent_60px,#dcdcdc_61px),repeating-linear-gradient(-45deg,transparent,transparent_3px,#0000001a_3px,#0000001a_4px)]",
+    logo:
+      actualTheme === "dark"
+        ? "w-[64rpx] h-[64rpx] rounded-[18rpx] border-[2rpx] border-[#333333] flex items-center justify-center text-[26rpx] font-bold bg-[#1a1a1a] text-[#ffffff]"
+        : "w-[64rpx] h-[64rpx] rounded-[18rpx] border-[2rpx] border-[#1a1a1a] flex items-center justify-center text-[26rpx] font-bold bg-[#ffffff] text-[#1a1a1a]",
+    aboutButton:
+      actualTheme === "dark"
+        ? "mr-0 border-[2rpx] border-solid border-[#333333] rounded-[999px] px-[24rpx] h-[72rpx] leading-[72rpx] bg-[#1a1a1a] text-[#ffffff] text-[26rpx]"
+        : "mr-0 border-[2rpx] border-solid border-[#1a1a1a] rounded-[999px] px-[24rpx] h-[72rpx] leading-[72rpx] bg-[#ffffff] text-[#1a1a1a] text-[26rpx]",
+    createButton:
+      actualTheme === "dark"
+        ? "mr-0 border-[2rpx] border-solid border-[#333333] rounded-[999px] px-[24rpx] h-[72rpx] leading-[72rpx] bg-[#ff8c42] text-[#ffffff] text-[26rpx]"
+        : "mr-0 border-[2rpx] border-solid border-[#1a1a1a] rounded-[999px] px-[24rpx] h-[72rpx] leading-[72rpx] bg-[#f6821f] text-[#ffffff] text-[26rpx]",
+    eventCard:
+      actualTheme === "dark"
+        ? "border-[2rpx] border-[#333333] rounded-[18rpx] p-[30rpx] px-[24rpx] bg-[#1a1a1a] flex items-center justify-between shadow-[0_16rpx_32rpx_#00000010] cursor-pointer"
+        : "border-[2rpx] border-[#1a1a1a] rounded-[18rpx] p-[30rpx] px-[24rpx] bg-[#ffffff] flex items-center justify-between shadow-[0_16rpx_32rpx_#00000010] cursor-pointer",
+    arrowText:
+      actualTheme === "dark"
+        ? "text-[40rpx] text-[#888888] translate-y-[-2px]"
+        : "text-[40rpx] text-[#888888] translate-y-[-2px]",
+    eventTypeTag:
+      actualTheme === "dark"
+        ? "h-[44rpx] px-[14rpx] rounded-[999px] text-[22rpx] leading-[44rpx] border-[2rpx]"
+        : "h-[44rpx] px-[14rpx] rounded-[999px] text-[22rpx] leading-[44rpx] border-[2rpx]",
+    timeTag:
+      actualTheme === "dark"
+        ? "bg-[#2a2a2a] border-[#444444] text-[#cccccc]"
+        : "bg-[#f5f5f0] border-[#cccccc] text-[#4a4a4a]",
+    todoTag:
+      actualTheme === "dark"
+        ? "bg-[#ff8c4222] border-[#ff8c42] text-[#ffb27f]"
+        : "bg-[#f6821f1a] border-[#f6821f] text-[#f6821f]",
+    emptyState:
+      actualTheme === "dark"
+        ? "border-[2rpx] dashed border-[#888888] rounded-[18rpx] p-[28rpx] text-[#cccccc] text-center text-[26rpx] leading-[1.5] bg-[repeating-linear-gradient(-45deg,transparent,transparent_3px,#0000001a_3px,#0000001a_4px)]"
+        : "border-[2rpx] dashed border-[#888888] rounded-[18rpx] p-[28rpx] text-[#4a4a4a] text-center text-[26rpx] leading-[1.5] bg-[repeating-linear-gradient(-45deg,transparent,transparent_3px,#0000001a_3px,#0000001a_4px)]",
     // 对话框样式
-    dialog: actualTheme === 'dark'
-      ? "relative w-[min(90vw,480px)] bg-[#1a1a1a] border-[2rpx] border-[#333333] rounded-[20rpx] shadow-[0_30rpx_60rpx_#00000025] p-[28rpx] flex flex-col gap-[16rpx] z-[11]"
-      : "relative w-[min(90vw,480px)] bg-[#ffffff] border-[2rpx] border-[#1a1a1a] rounded-[20rpx] shadow-[0_30rpx_60rpx_#00000025] p-[28rpx] flex flex-col gap-[16rpx] z-[11]",
-    dialogTitle: actualTheme === 'dark' ? "text-[36rpx] font-semibold text-[#ffffff]" : "text-[36rpx] font-semibold text-[#1a1a1a]",
-    dialogCloseButton: actualTheme === 'dark'
-      ? "border-[2rpx] border-solid border-[#333333] rounded-[999px] px-[20rpx] h-[64rpx] leading-[64rpx] bg-transparent text-[26rpx] mr-0 text-[#ffffff]"
-      : "border-[2rpx] border-solid border-[#1a1a1a] rounded-[999px] px-[20rpx] h-[64rpx] leading-[64rpx] bg-transparent text-[26rpx] mr-0 text-[#1a1a1a]",
-    dialogBorder: actualTheme === 'dark' ? "border-t-[2rpx] border-[#333333]" : "border-t-[2rpx] border-[#f1f1e6]",
-    input: actualTheme === 'dark'
-      ? "h-[96rpx] border-[2rpx] border-[#333333] rounded-[16rpx] px-[24rpx] text-[30rpx] leading-[1.35] bg-[#0f0f0f] text-[#ffffff]"
-      : "h-[96rpx] border-[2rpx] border-[#1a1a1a] rounded-[16rpx] px-[24rpx] text-[30rpx] leading-[1.35] bg-[#f5f5f0] text-[#1a1a1a]",
-    primaryButton: actualTheme === 'dark'
-      ? "bg-[#ff8c42] text-[#ffffff] rounded-[16rpx] text-[30rpx] h-[96rpx] leading-[96rpx] w-full shadow-[0_16rpx_28rpx_#ff8c4240]"
-      : "bg-[#f6821f] text-[#ffffff] rounded-[16rpx] text-[30rpx] h-[96rpx] leading-[96rpx] w-full shadow-[0_16rpx_28rpx_#f6821f40]",
-    dialogText: actualTheme === 'dark' ? "text-[28rpx] text-[#cccccc] leading-[1.5]" : "text-[28rpx] text-[#4a4a4a] leading-[1.5]",
-    dangerButton: actualTheme === 'dark'
-      ? "flex-1 h-[72rpx] leading-[72rpx] rounded-[999px] bg-[#ff6b6b] shadow-[0_12rpx_24rpx_#ff6b6b40] text-[#ffffff]"
-      : "flex-1 h-[72rpx] leading-[72rpx] rounded-[999px] bg-[#f4333c] shadow-[0_12rpx_24rpx_#f4333c40] text-[#ffffff]",
-    aboutText: actualTheme === 'dark' ? "text-[26rpx] leading-[1.5] text-[#cccccc]" : "text-[26rpx] leading-[1.5] text-[#4a4a4a]",
-    aboutHighlight: actualTheme === 'dark' ? "mt-[8rpx] font-semibold text-[#ffffff]" : "mt-[8rpx] font-semibold text-[#1a1a1a]"
+    dialog:
+      actualTheme === "dark"
+        ? "relative w-[min(90vw,480px)] bg-[#1a1a1a] border-[2rpx] border-[#333333] rounded-[20rpx] shadow-[0_30rpx_60rpx_#00000025] p-[28rpx] flex flex-col gap-[16rpx] z-[11]"
+        : "relative w-[min(90vw,480px)] bg-[#ffffff] border-[2rpx] border-[#1a1a1a] rounded-[20rpx] shadow-[0_30rpx_60rpx_#00000025] p-[28rpx] flex flex-col gap-[16rpx] z-[11]",
+    dialogTitle:
+      actualTheme === "dark"
+        ? "text-[36rpx] font-semibold text-[#ffffff]"
+        : "text-[36rpx] font-semibold text-[#1a1a1a]",
+    dialogCloseButton:
+      actualTheme === "dark"
+        ? "border-[2rpx] border-solid border-[#333333] rounded-[999px] px-[20rpx] h-[64rpx] leading-[64rpx] bg-transparent text-[26rpx] mr-0 text-[#ffffff]"
+        : "border-[2rpx] border-solid border-[#1a1a1a] rounded-[999px] px-[20rpx] h-[64rpx] leading-[64rpx] bg-transparent text-[26rpx] mr-0 text-[#1a1a1a]",
+    dialogBorder:
+      actualTheme === "dark"
+        ? "border-t-[2rpx] border-[#333333]"
+        : "border-t-[2rpx] border-[#f1f1e6]",
+    input:
+      actualTheme === "dark"
+        ? "h-[96rpx] border-[2rpx] border-[#333333] rounded-[16rpx] px-[24rpx] text-[30rpx] leading-[1.35] bg-[#0f0f0f] text-[#ffffff]"
+        : "h-[96rpx] border-[2rpx] border-[#1a1a1a] rounded-[16rpx] px-[24rpx] text-[30rpx] leading-[1.35] bg-[#f5f5f0] text-[#1a1a1a]",
+    primaryButton:
+      actualTheme === "dark"
+        ? "bg-[#ff8c42] text-[#ffffff] rounded-[16rpx] text-[30rpx] h-[96rpx] leading-[96rpx] w-full shadow-[0_16rpx_28rpx_#ff8c4240]"
+        : "bg-[#f6821f] text-[#ffffff] rounded-[16rpx] text-[30rpx] h-[96rpx] leading-[96rpx] w-full shadow-[0_16rpx_28rpx_#f6821f40]",
+    secondaryButton:
+      actualTheme === "dark"
+        ? "bg-[#2a2a2a] text-[#ffffff] border-[2rpx] border-[#444444]"
+        : "bg-[#f5f5f0] text-[#1a1a1a] border-[2rpx] border-[#cccccc]",
+    dialogText:
+      actualTheme === "dark"
+        ? "text-[28rpx] text-[#cccccc] leading-[1.5]"
+        : "text-[28rpx] text-[#4a4a4a] leading-[1.5]",
+    dangerButton:
+      actualTheme === "dark"
+        ? "flex-1 h-[72rpx] leading-[72rpx] rounded-[999px] bg-[#ff6b6b] shadow-[0_12rpx_24rpx_#ff6b6b40] text-[#ffffff]"
+        : "flex-1 h-[72rpx] leading-[72rpx] rounded-[999px] bg-[#f4333c] shadow-[0_12rpx_24rpx_#f4333c40] text-[#ffffff]",
+    aboutText:
+      actualTheme === "dark"
+        ? "text-[26rpx] leading-[1.5] text-[#cccccc]"
+        : "text-[26rpx] leading-[1.5] text-[#4a4a4a]",
+    aboutHighlight:
+      actualTheme === "dark"
+        ? "mt-[8rpx] font-semibold text-[#ffffff]"
+        : "mt-[8rpx] font-semibold text-[#1a1a1a]",
   };
 
   return (
@@ -222,9 +273,7 @@ export default function Index() {
         className="px-[8rpx]"
         left={
           <View className="flex items-center gap-[12rpx]">
-            <View className={themeStyles.logo}>
-              CP
-            </View>
+            <View className={themeStyles.logo}>CP</View>
             <Text className="text-[32rpx] font-semibold">Chrono Pulse</Text>
           </View>
         }
@@ -282,13 +331,22 @@ export default function Index() {
                   className={themeStyles.eventCard}
                   onClick={() => goToDetail(event.id)}
                 >
-                  <View className="flex items-center justify-between gap-[12px] w-full">
-                    <Text className="text-[32rpx] font-semibold leading-[1.35]">
+                  <View className="flex items-center justify-between gap-[12rpx] w-full">
+                    <Text className="flex-1 text-[32rpx] font-semibold leading-[1.35]">
                       {event.title}
                     </Text>
-                    <Text className={themeStyles.arrowText}>
-                      ›
-                    </Text>
+                    <View className="flex items-center gap-[12rpx]">
+                      <Text
+                        className={`${themeStyles.eventTypeTag} ${
+                          event.type === "todo"
+                            ? themeStyles.todoTag
+                            : themeStyles.timeTag
+                        }`}
+                      >
+                        {event.type === "todo" ? "待办" : "时间"}
+                      </Text>
+                      <Text className={themeStyles.arrowText}>›</Text>
+                    </View>
                   </View>
                 </View>
               </SwipeableItem>
@@ -318,7 +376,35 @@ export default function Index() {
                 关闭
               </Button>
             </View>
-            <View className={`flex flex-col gap-[16rpx] p-[28rpx] ${themeStyles.dialogBorder}`}>
+            <View
+              className={`flex flex-col gap-[16rpx] p-[28rpx] ${themeStyles.dialogBorder}`}
+            >
+              {/* 类型选择器 - 仅在创建模式显示 */}
+              {!editingEventId && (
+                <View className="flex gap-[16rpx]">
+                  <Button
+                    className={`flex-1 h-[96rpx] rounded-[16rpx] text-[30rpx] ${
+                      eventType === "time-tracking"
+                        ? themeStyles.primaryButton
+                        : themeStyles.secondaryButton
+                    }`}
+                    onClick={() => setEventType("time-tracking")}
+                  >
+                    时间
+                  </Button>
+                  <Button
+                    className={`flex-1 h-[96rpx] rounded-[16rpx] text-[30rpx] ${
+                      eventType === "todo"
+                        ? themeStyles.primaryButton
+                        : themeStyles.secondaryButton
+                    }`}
+                    onClick={() => setEventType("todo")}
+                  >
+                    待办
+                  </Button>
+                </View>
+              )}
+
               <Input
                 value={title}
                 placeholder="事件标题（如：外场测试）"
@@ -397,7 +483,9 @@ export default function Index() {
                 关闭
               </Button>
             </View>
-            <View className={`flex flex-col gap-[12rpx] ${themeStyles.aboutText}`}>
+            <View
+              className={`flex flex-col gap-[12rpx] ${themeStyles.aboutText}`}
+            >
               <Text>作者: madinah</Text>
               <Text>
                 代码开源地址： https://github.com/Maidang1/chrono-pulse

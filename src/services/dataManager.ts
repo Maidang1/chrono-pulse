@@ -1,5 +1,5 @@
 import Taro from '@tarojs/taro';
-import type { EventItem, EventRecord } from '../types/events';
+import type { EventItem, EventRecord, EventType } from '../types/events';
 
 type DataChangeListener = () => void;
 
@@ -82,6 +82,7 @@ class DataManager {
           // Sanitize loaded events to ensure records array exists
           this.events = storedEvents.map((e: EventItem) => ({
             ...e,
+            type: e.type || 'time-tracking',  // 向后兼容：默认为时间记录类型
             records: Array.isArray(e.records) ? e.records : []
           }));
           // Notify immediately to show data
@@ -267,6 +268,7 @@ class DataManager {
 
         // 2. Ensure records array exists and sort
         allCloudEvents.forEach(event => {
+            event.type = event.type || 'time-tracking';  // 向后兼容：默认为时间记录类型
             event.records = Array.isArray(event.records) ? event.records : [];
             // Sort records by date/time desc if needed
             event.records.sort((a, b) => {
@@ -338,12 +340,13 @@ class DataManager {
     return event ? [...event.records] : [];
   }
 
-  async createEvent(title: string, description: string): Promise<EventItem | null> {
+  async createEvent(title: string, description: string, type: EventType = 'time-tracking'): Promise<EventItem | null> {
     const now = new Date();
     const newEvent: EventItem = {
       id: Date.now(),
       title,
       description,
+      type,
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
       records: []
@@ -422,6 +425,14 @@ class DataManager {
     const event = this.events.find(e => e.id === eventId);
     if (!event) return null;
 
+    // 验证：时间记录类型必须有时间字段
+    if (event.type === 'time-tracking') {
+      if (!recordData.startDate || !recordData.startTime ||
+          !recordData.endDate || !recordData.endTime) {
+        throw new Error('时间记录类型必须填写完整的时间信息');
+      }
+    }
+
     const newRecord: EventRecord = {
       ...recordData,
       id: Date.now(),
@@ -456,6 +467,22 @@ class DataManager {
     const updatedEvent = { ...event, records };
 
     return await this.updateEvent(updatedEvent);
+  }
+
+  async toggleRecordComplete(eventId: number, recordId: number): Promise<boolean> {
+    const event = this.events.find(e => e.id === eventId);
+    if (!event || event.type !== 'todo') return false;
+
+    const record = event.records.find(r => r.id === recordId);
+    if (!record) return false;
+
+    const updatedRecord = {
+      ...record,
+      completed: !record.completed,
+      completedAt: !record.completed ? new Date().toISOString() : undefined
+    };
+
+    return await this.updateRecord(eventId, updatedRecord);
   }
 
   // --- Misc ---
